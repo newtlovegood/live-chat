@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}
+	<title>Room</title>
+{% endblock %}
+  {% block style %}
+    <style>
+      /* Set the size and position of the frame */
+      .chat-frame {
+        width: 60%;
+        height: 80%;
+        margin: 10% auto;
+        background-color: lightblue;
+        border: 2px solid darkblue;
+        padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+      }
+
+      @media screen and (max-width: 768px) {
+        .chat-frame {
+          width: 100%;
+          height: 100%;
+          margin: 0;
+        }
+      }
+
+      /* Set the style of the messages box */
+      .messages-box {
+        flex-grow: 1;
+        overflow-y: scroll;
+        background-color: white;
+        border: 1px solid black;
+        padding: 10px;
+        box-sizing: border-box;
+        margin: 10px;
+        border-radius: 10px;
+      }
+
+      /* Set the style of the message input */
+      .message-input {
+        width: 80%;
+        padding: 10px;
+        border: none;
+        border-top: 1px solid black;
+        box-sizing: border-box;
+        float: left;
+      }
+
+      /* Set the style of the send button */
+      .send-button {
+        width: 20%;
+        height: 100%;
+        padding: 10px;
+        border: none;
+        background-color: blue;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        float: right;
+      }
+
+      /* Clear floating elements */
+      .clearfix::after {
+        content: "";
+        clear: both;
+        display: table;
+      }
+
+      /* Set the style of the sent message */
+      .sent-message {
+        background-color: #bde0ff;
+        color: black;
+        padding: 5px 10px;
+        margin: 5px 0;
+        align-self: flex-end;
+        border-radius: 10px;
+        max-width: 80%;
+        text-align: right;
+      }
+    .received-message {
+      background-color: #e0e0e0;
+      color: black;
+      padding: 5px 10px;
+      margin: 5px 0;
+      align-self: flex-start; /* align to the left */
+      border-radius: 10px;
+      max-width: 80%; /* limit the width to 80% of the frame */
+      text-align: left; /* align the text to the left */
+    }
+
+    </style>
+{% endblock %}
+  {% block links %}
+  {% endblock %}
+{% block body %}
+    <div class="chat-frame">
+      <div class="messages-box" id="messages-box">
+        <!-- Display previous messages here -->
+      </div>
+      <div class="clearfix">
+        <form id="message_form" action="">
+          <input type="text" class="message-input" id="message_input" placeholder="Type your message here...">
+          <button class="send-button" type="submit">SEND</button>
+        </form>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script src="//code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+  <script>
+        const socket = io();
+        const messageForm = document.getElementById('message_form');
+        const messageInput = document.getElementById('message_input');
+        let userId;
+
+        socket.on('user_connected', (data) => {
+            console.log(data);
+            userId = data;
+        });
+
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            var msg_data = {user_id: userId};
+            const message = messageInput.value;
+            if (!message) return;
+            msg_data.content = message;
+            console.log(msg_data);
+            socket.emit('send_message', msg_data);
+            messageInput.value = '';
+        });
+
+        socket.on('send_message', (data) => {
+          displayNewMessage(data);
+        });
+
+        function displayNewMessage(data) {
+        // Get the message input and messages box
+        var messagesBox = document.getElementById("messages-box");
+        var msg = document.createElement("div");
+
+        // Create a new message element and append it to the messages box
+        if (data.user_id === userId) {
+            msg.classList.add("sent-message");
+        } else {
+            msg.classList.add("received-message");
+        }
+        msg.textContent = data.content;
+        messagesBox.appendChild(msg);
+      }
+      window.addEventListener("beforeunload", function (e) {
+        // Send an HTTP request to your server
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/logout", false); // Replace "/logout" with the URL of your server endpoint
+        xhr.send();
+      });
+  </script>
+  </body>
+{% endblock %}
